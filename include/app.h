@@ -10,16 +10,17 @@
 
 class App {
 public:
-  App();
+  App(const std::vector<std::string>& video_file_names);
+  ~App();
 
-  [[noreturn]] void run_stitching();
+  void run_stitching();
 
 private:
   SensorDataInterface sensor_data_interface_;
   ImageStitcher image_stitcher_;
-  std::vector<cv::Mat> image_vector_;
   cv::UMat image_concat_umat_;
   int total_cols_;
+  cv::VideoWriter video_writer_;
 
 };
 

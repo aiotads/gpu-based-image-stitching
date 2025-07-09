@@ -6,6 +6,7 @@
 #include <mutex>
 #include <queue>
 #include <vector>
+#include <atomic>
 
 #include <opencv2/opencv.hpp>
 
@@ -14,24 +15,17 @@ public:
 
   SensorDataInterface();
 
-  void InitExampleImages();
+  void InitVideoCapture(const std::vector<std::string>& video_file_names);
 
-  void InitVideoCapture();
+  bool get_next_frames(std::vector<cv::UMat>& image_vector);
 
-  void get_image_vector(std::vector<cv::UMat>& image_vector,
-                        std::vector<std::mutex>& image_mutex_vector);
-
-  [[noreturn]] void RecordVideos();
+  double get_video_capture_fps();
+  cv::Size get_video_capture_size();
 
   size_t num_img_;
 
 private:
-  const size_t max_queue_length_;
-  std::vector<std::queue<cv::UMat>> image_queue_vector_;
-  std::vector<std::mutex> image_queue_mutex_vector_;
   std::vector<cv::VideoCapture> video_capture_vector_;
-
-//    std::vector<RectifyMap> cylindrical_map_vector_;
 };
 
 #endif //IMAGE_STITCHING_SENSOR_DATA_INTERFACE_H

@@ -17,8 +17,7 @@ public:
 
   void WarpImages(const int& img_idx,
                   const int& fusion_pixel,
-                  const std::vector<cv::UMat>& image_vector,
-                  std::vector<std::mutex>& image_mutex_vector,
+                  const cv::UMat& image_umat,
                   std::vector<cv::UMat>& images_warped_with_roi_vector,
                   cv::UMat& image_concat_umat);
 

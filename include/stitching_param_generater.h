@@ -25,9 +25,9 @@ public:
 private:
   // Default command line args
   std::vector<cv::String> img_names;
-  bool try_cuda = false;
+  bool try_cuda = true;
   float conf_thresh = 1.f;
-  float match_conf = 0.6f;
+  float match_conf = 0.5f;
   std::string matcher_type = "homography";
   std::string estimator_type = "homography";
   std::string ba_cost_func = "reproj";

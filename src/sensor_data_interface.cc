@@ -6,88 +6,49 @@
 #include <string>
 #include <thread>
 
-SensorDataInterface::SensorDataInterface()
-    : max_queue_length_(2) {
+SensorDataInterface::SensorDataInterface() {
   num_img_ = 0;
 }
 
-void SensorDataInterface::InitExampleImages() {
-  std::string img_dir = "../datasets/cam01/pic_raw/";
-  std::vector<std::string> img_file_name = {"0.jpg", "1.jpg", "2.jpg", "3.jpg"};
-
-  num_img_ = img_file_name.size();
-  image_queue_vector_ = std::vector<std::queue<cv::UMat>>(num_img_);
-
-  for (int i = 0; i < img_file_name.size(); ++i) {
-    std::string file_name = img_dir + img_file_name[i];
-    cv::UMat _;
-    cv::imread(file_name, 1).copyTo(_);
-    image_queue_vector_[i].push(_);
-  }
-}
-
-void SensorDataInterface::InitVideoCapture() {
+void SensorDataInterface::InitVideoCapture(const std::vector<std::string>& video_file_names) {
   std::cout << "Initializing video capture..." << std::endl;
 
-  std::string video_dir = "../datasets/air-4cam-mp4/";
-  std::vector<std::string> video_file_name = {"00.mp4", "01.mp4", "02.mp4", "03.mp4"};
-
-  num_img_ = video_file_name.size();
-  image_queue_vector_ = std::vector<std::queue<cv::UMat>>(num_img_);
-  image_queue_mutex_vector_ = std::vector<std::mutex>(num_img_);
+  num_img_ = video_file_names.size();
 
   // Init video capture.
-  for (int i = 0; i < num_img_; ++i) {
-    std::string file_name = video_dir + video_file_name[i];
-
+  for (const auto& file_name : video_file_names) {
     cv::VideoCapture capture(file_name);
     if (!capture.isOpened())
-      std::cout << "Failed to open capture " << i << std::endl;
+      std::cout << "Failed to open capture " << file_name << std::endl;
     video_capture_vector_.push_back(capture);
-
-    cv::UMat frame;
-    capture.read(frame);
-    image_queue_vector_[i].push(frame);
   }
   std::cout << "Done. " << num_img_ << " captures initialized." << std::endl;
 }
 
-[[noreturn]] void SensorDataInterface::RecordVideos() {
-  size_t frame_idx = 0;
-  while (true) {
-    for (int i = 0; i < num_img_; ++i) {
-      cv::UMat frame;
-      video_capture_vector_[i].read(frame);
-      if (frame.rows > 0) {
-        image_queue_mutex_vector_[i].lock();
-        image_queue_vector_[i].push(frame);
-        if (image_queue_vector_[i].size() > max_queue_length_) {
-          image_queue_vector_[i].pop();
-        }
-        image_queue_mutex_vector_[i].unlock();
-      }
-    }
-    std::cout << "[RecordVideos] recorded frame " << frame_idx << "." << std::endl;
-    frame_idx++;
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+double SensorDataInterface::get_video_capture_fps() {
+  if (!video_capture_vector_.empty()) {
+    return video_capture_vector_[0].get(cv::CAP_PROP_FPS);
   }
+  return 30.0;
 }
 
-void SensorDataInterface::get_image_vector(
-    std::vector<cv::UMat>& image_vector,
-    std::vector<std::mutex>& image_mutex_vector) {
+cv::Size SensorDataInterface::get_video_capture_size() {
+    if (!video_capture_vector_.empty()) {
+        return cv::Size((int)video_capture_vector_[0].get(cv::CAP_PROP_FRAME_WIDTH),
+                        (int)video_capture_vector_[0].get(cv::CAP_PROP_FRAME_HEIGHT));
+    }
+    return cv::Size(1920, 1080);
+}
 
-  std::cout << "[SensorDataInterface] Getting new images...";
+bool SensorDataInterface::get_next_frames(
+    std::vector<cv::UMat>& image_vector) {
   for (size_t i = 0; i < num_img_; ++i) {
-    cv::Mat img_undistort;
-    cv::Mat img_cylindrical;
-
-    image_queue_mutex_vector_[i].lock();
-    image_mutex_vector[i].lock();
-    image_vector[i] = image_queue_vector_[i].front();
-    image_mutex_vector[i].unlock();
-    image_queue_mutex_vector_[i].unlock();
+    cv::Mat frame;
+    video_capture_vector_[i].read(frame);
+    if (frame.empty()) {
+      return false;
+    }
+    frame.copyTo(image_vector[i]);
   }
-  std::cout << " Done." << std::endl;
-
+  return true;
 }

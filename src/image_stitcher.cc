@@ -88,17 +88,15 @@ void ImageStitcher::CreateWeightMap(const int& height, const int& width) {
 void ImageStitcher::WarpImages(
     const int& img_idx,
     const int& fusion_pixel,
-    const std::vector<cv::UMat>& image_vector,
-    std::vector<std::mutex>& image_mutex_vector,
+    const cv::UMat& image_umat,
     std::vector<cv::UMat>& images_warped_with_roi_vector,
     cv::UMat& image_concat_umat) {
 
   std::cout << "[WarpImages] Warping images " << img_idx << " of " << num_img_ << "..." << std::endl;
   int64_t t0, t1, t2, t3, t4, t5, t6, tn;
   t0 = cv::getTickCount();
-  image_mutex_vector[img_idx].lock();
 
-//  remap(image_vector[img_idx],
+//  remap(image_umat,
 //        tmp_umat_vect_[img_idx],
 //        undist_xmap_vector_[img_idx],
 //        undist_ymap_vector_[img_idx],
@@ -115,13 +113,12 @@ void ImageStitcher::WarpImages(
   // Combine two remap operator (For speed up a little)
 
   std::cout << "[WarpImages] Remapping " << img_idx << ":" << num_img_ << " ..." << std::endl;
-  remap(image_vector[img_idx],
+  remap(image_umat,
         tmp_umat_vect_[img_idx],
         final_xmap_vector_[img_idx],
         final_ymap_vector_[img_idx],
         cv::INTER_LINEAR);
   std::cout << "[WarpImages] Remapped " << img_idx << ":" << num_img_ << " ..." << std::endl;
-  image_mutex_vector[img_idx].unlock();
   t2 = cv::getTickCount();
   t3 = cv::getTickCount();
 
